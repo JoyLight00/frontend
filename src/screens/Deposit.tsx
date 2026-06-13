@@ -1,12 +1,15 @@
+'use client'
+
 import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button, AmountInput } from '../components'
 import { Helio } from '../brand/Helio'
-import { HB_DATA } from '../data'
+import { vault } from '../wallet/vault'
 
 /**
  * Deposit — the flow that must be perfect. One column, one decision per step:
- * amount (live on-chain preview) -> review in plain words -> pending (hash from
- * second zero) -> success (impact, not hype). Errors name cause + fix.
+ * amount (live preview from the vault) -> review in plain words -> pending (hash
+ * from second zero) -> success (impact, not hype). Errors name cause + fix.
  */
 export interface DepositProps {
   onDone: () => void
@@ -14,13 +17,20 @@ export interface DepositProps {
 
 type DepositStep = 'amount' | 'review' | 'pending' | 'success'
 
+const num = (chunks: ReactNode) => (
+  <b className="hb-data" style={{ color: 'var(--ink)' }}>
+    {chunks}
+  </b>
+)
+const strong = (chunks: ReactNode) => <b style={{ color: 'var(--ink)' }}>{chunks}</b>
+
 export function Deposit({ onDone }: DepositProps) {
-  const d = HB_DATA
+  const t = useTranslations('Deposit')
   const [step, setStep] = useState<DepositStep>('amount')
   const [amount, setAmount] = useState('100')
   const n = parseFloat(amount) || 0
-  const price = d.pool.sharePrice
-  const shares = n / price
+  const price = vault.sharePrice()
+  const shares = vault.convertToShares(n)
 
   return (
     <main style={{ maxWidth: 520, margin: '0 auto', padding: '48px 24px 80px' }}>
@@ -28,7 +38,7 @@ export function Deposit({ onDone }: DepositProps) {
 
       {step === 'amount' && (
         <Panel>
-          <h1 style={h1Style}>How much would you like to invest?</h1>
+          <h1 style={h1Style}>{t('amountH1')}</h1>
           <AmountInput
             value={amount}
             onChange={setAmount}
@@ -37,43 +47,37 @@ export function Deposit({ onDone }: DepositProps) {
             chips={[25, 50, 100]}
             preview={
               <span style={{ fontFamily: 'var(--font-body)', fontSize: 13.5, lineHeight: 1.55, color: 'var(--ink-60)' }}>
-                You'll receive ≈ <b className="hb-data" style={{ color: 'var(--ink)' }}>{shares.toFixed(4)} HBS</b>
-                {' · '}share price <b className="hb-data" style={{ color: 'var(--ink)' }}>{price}</b>
-                {' · '}network fee <b style={{ color: 'var(--ink)' }}>&lt; $0.01</b>
+                {t.rich('preview', { shares: shares.toFixed(4), price, num })}
               </span>
             }
           />
-          <p style={liqLine}>
-            Today the pool is <b style={{ color: 'var(--ink)' }}>29% liquid</b> — you can withdraw your liquid share anytime.
-          </p>
+          <p style={liqLine}>{t.rich('liquidLine', { b: strong })}</p>
           <Button
             variant="primary"
             size="lg"
             style={{ width: '100%', marginTop: 20 }}
             disabled={n < 1}
-            reason={n < 1 ? 'Enter an amount of at least 1 USDC' : undefined}
+            reason={n < 1 ? t('reasonMin') : undefined}
             onClick={() => setStep('review')}
           >
-            {n >= 1 ? `Invest ${n} USDC` : 'Invest'}
+            {n >= 1 ? t('investCta', { amount: n }) : t('investCtaEmpty')}
           </Button>
         </Panel>
       )}
 
       {step === 'review' && (
         <Panel>
-          <h1 style={h1Style}>You're investing {n} USDC in the pool</h1>
+          <h1 style={h1Style}>{t('reviewH1', { amount: n })}</h1>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: 'var(--ink-12)', borderRadius: 'var(--radius-input)', overflow: 'hidden', margin: '6px 0 20px' }}>
-            <Row k="You pay" v={`${n.toFixed(2)} USDC`} />
-            <Row k="You receive" v={`≈ ${shares.toFixed(4)} HBS`} />
-            <Row k="Share price" v={`${price}`} />
-            <Row k="Network fee" v="< $0.01" />
+            <Row k={t('rowPay')} v={`${n.toFixed(2)} USDC`} />
+            <Row k={t('rowReceive')} v={`≈ ${shares.toFixed(4)} HBS`} />
+            <Row k={t('rowPrice')} v={`${price}`} />
+            <Row k={t('rowFee')} v="< $0.01" />
           </div>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13.5, lineHeight: 1.55, color: 'var(--ink-60)', margin: '0 0 20px' }}>
-            Your shares represent a stake in the whole pool, which funds 14 verified projects. You can withdraw your liquid share at any time.
-          </p>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13.5, lineHeight: 1.55, color: 'var(--ink-60)', margin: '0 0 20px' }}>{t('reviewBody')}</p>
           <div style={{ display: 'flex', gap: 10 }}>
             <Button variant="ghost" onClick={() => setStep('amount')}>
-              Back
+              {t('back')}
             </Button>
             <Button
               variant="primary"
@@ -84,7 +88,7 @@ export function Deposit({ onDone }: DepositProps) {
                 setTimeout(() => setStep('success'), 2200)
               }}
             >
-              Confirm in wallet
+              {t('confirm')}
             </Button>
           </div>
         </Panel>
@@ -94,9 +98,9 @@ export function Deposit({ onDone }: DepositProps) {
         <Panel>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px 0' }}>
             <PendingDot />
-            <h1 style={{ ...h1Style, textAlign: 'center', marginTop: 18 }}>Confirming your deposit</h1>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 14.5, color: 'var(--ink-60)', margin: '0 0 14px' }}>Usually ~5 seconds on Stellar.</p>
-            <span style={{ fontFamily: 'var(--font-data)', fontSize: 12.5, color: 'var(--ink-40)' }}>tx a91f…3c0d · view on Stellar Expert ↗</span>
+            <h1 style={{ ...h1Style, textAlign: 'center', marginTop: 18 }}>{t('pendingH1')}</h1>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 14.5, color: 'var(--ink-60)', margin: '0 0 14px' }}>{t('pendingSub')}</p>
+            <span style={{ fontFamily: 'var(--font-data)', fontSize: 12.5, color: 'var(--ink-40)' }}>{t('pendingTx')}</span>
           </div>
         </Panel>
       )}
@@ -106,17 +110,16 @@ export function Deposit({ onDone }: DepositProps) {
           <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0 6px' }}>
             <Helio size={160} motes={14} />
           </div>
-          <h1 style={{ ...h1Style, textAlign: 'center' }}>Welcome to the pool</h1>
+          <h1 style={{ ...h1Style, textAlign: 'center' }}>{t('successH1')}</h1>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: 15, lineHeight: 1.55, color: 'var(--ink-60)', textAlign: 'center', margin: '0 0 22px' }}>
-            You received <b className="hb-data" style={{ color: 'var(--ink)' }}>{shares.toFixed(4)} HBS</b> and now back{' '}
-            <b style={{ color: 'var(--ink)' }}>14 verified projects</b>.
+            {t.rich('successBody', { shares: shares.toFixed(4), num, b: strong })}
           </p>
           <div style={{ display: 'flex', gap: 10 }}>
             <Button variant="secondary" style={{ flex: 1 }}>
-              View on Stellar Expert
+              {t('viewExpert')}
             </Button>
             <Button variant="primary" style={{ flex: 1 }} onClick={onDone}>
-              Go to portfolio
+              {t('goPortfolio')}
             </Button>
           </div>
         </Panel>
@@ -126,8 +129,14 @@ export function Deposit({ onDone }: DepositProps) {
 }
 
 function Stepper({ step }: { step: DepositStep }) {
+  const t = useTranslations('Deposit')
   const order: DepositStep[] = ['amount', 'review', 'pending', 'success']
-  const labels: Record<DepositStep, string> = { amount: 'Amount', review: 'Review', pending: 'Sign', success: 'Done' }
+  const labels: Record<DepositStep, string> = {
+    amount: t('stepAmount'),
+    review: t('stepReview'),
+    pending: t('stepSign'),
+    success: t('stepDone'),
+  }
   const idx = order.indexOf(step)
   return (
     <div style={{ display: 'flex', gap: 8, marginBottom: 24, justifyContent: 'center' }}>

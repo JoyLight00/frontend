@@ -1,12 +1,15 @@
+'use client'
+
 import { type CSSProperties, type ReactNode } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button, StatBlock, LiquidityMeter } from '../components'
 import { Helio } from '../brand/Helio'
 import { HB_DATA } from '../data'
 
 /**
  * Portfolio — calm dashboard. Headline value with delta since deposit, the
- * personal mini-Helio, and three always-visible figures including the
- * permanent "Available to withdraw now" liquidity truth.
+ * personal mini-Helio, and three always-visible figures including the permanent
+ * "Available to withdraw now" liquidity truth.
  */
 export interface PortfolioProps {
   onWithdraw: () => void
@@ -14,23 +17,24 @@ export interface PortfolioProps {
 }
 
 export function Portfolio({ onWithdraw, onDeposit }: PortfolioProps) {
+  const t = useTranslations('Portfolio')
   const d = HB_DATA
 
   return (
     <main style={{ maxWidth: 1080, margin: '0 auto', padding: '48px 32px 80px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', marginBottom: 8 }}>
         <div>
-          <div className="hb-eyebrow" style={{ marginBottom: 14 }}>Your portfolio</div>
-          <StatBlock label="Current value" value="$24,180" decimals=".45" delta="+$612.18 (2.6%) since deposit" size="lg" />
+          <div className="hb-eyebrow" style={{ marginBottom: 14 }}>{t('eyebrow')}</div>
+          <StatBlock label={t('currentValue')} value="$24,180" decimals=".45" delta={`+$612.18 (2.6%) ${t('sinceDeposit')}`} size="lg" />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <Helio size={108} motes={d.you.backed} />
           <div style={{ display: 'flex', gap: 10 }}>
             <Button variant="secondary" onClick={onWithdraw}>
-              Withdraw
+              {t('withdraw')}
             </Button>
             <Button variant="primary" onClick={onDeposit}>
-              Invest more
+              {t('investMore')}
             </Button>
           </div>
         </div>
@@ -39,37 +43,35 @@ export function Portfolio({ onWithdraw, onDeposit }: PortfolioProps) {
       {/* three always-visible figures */}
       <div className="hb-figures-grid" style={{ margin: '28px 0' }}>
         <Card>
-          <StatBlock label="HBS held" value="24,041" decimals=".2310" size="md" />
+          <StatBlock label={t('hbsHeld')} value="24,041" decimals=".2310" size="md" />
         </Card>
         <Card>
-          <StatBlock label="Your share of the pool" value="0.49" unit="%" size="md" />
+          <StatBlock label={t('poolShare')} value="0.49" unit="%" size="md" />
         </Card>
         <Card>
           <LiquidityMeter liquid={236} total={482} currency="$" showExplanation={false} />
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--ink-60)', margin: '8px 0 0' }}>
-            Your liquid share. The rest is working in projects.
-          </p>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--ink-60)', margin: '8px 0 0' }}>{t('liquidCaption')}</p>
         </Card>
       </div>
 
       <div className="hb-portfolio-grid">
         {/* Impact */}
         <Card>
-          <h3 style={cardTitle}>Your impact</h3>
+          <h3 style={cardTitle}>{t('impactTitle')}</h3>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.55, color: 'var(--ink-60)', margin: '0 0 16px' }}>
-            Your stake helps fund <b style={{ color: 'var(--ink)' }}>14 verified projects</b> across 6 countries.
+            {t.rich('impactBody', { b: (c: ReactNode) => <b style={{ color: 'var(--ink)' }}>{c}</b> })}
           </p>
           <div style={{ display: 'flex', gap: 24 }}>
-            <StatBlock label="Projects backed" value="14" size="sm" />
-            <StatBlock label="Weighted green score" value="88" size="sm" />
+            <StatBlock label={t('projectsBacked')} value="14" size="sm" />
+            <StatBlock label={t('weightedGreen')} value="88" size="sm" />
           </div>
         </Card>
 
         {/* Activity */}
         <Card>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <h3 style={cardTitle}>Activity</h3>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--ink-40)' }}>every entry → Stellar Expert</span>
+            <h3 style={cardTitle}>{t('activityTitle')}</h3>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--ink-40)' }}>{t('activityNote')}</span>
           </div>
           {d.activity.map((a, i) => (
             <div
