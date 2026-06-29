@@ -156,5 +156,12 @@
     "successH1": "Withdrawal settled",
     "successBody": "<num>${amount} USDC</num> is on its way to your wallet. Thanks for being part of the pool.",
     "backToPortfolio": "Back to portfolio"
+  },
+  "Creator": {
+    "title": "Creator space",
+    "description": "Apply for the whitelist, build your project page, and watch the pool fund it. The oracle scores your credit quality and green impact, and we show you exactly what moves them.",
+    "tabApply": "Apply",
+    "tabBuild": "Build project",
+    "tabDashboard": "Dashboard"
   }
 }

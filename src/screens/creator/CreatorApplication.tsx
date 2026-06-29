@@ -117,11 +117,7 @@ export function CreatorApplication({ stage = 'submitted', onSubmit }: CreatorApp
 
         <div style={{ marginBottom: 18 }}>
           <Label htmlFor="">Project type</Label>
-          <div
-            style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}
-            role="radiogroup"
-            aria-label="Project type"
-          >
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {PROJECT_TYPES.map((t) => (
               <Tag key={t} selected={projectType === t} onClick={() => setProjectType(t)}>
                 {t}
