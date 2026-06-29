@@ -13,14 +13,14 @@ how we build: in the open, kindly, and to a high bar.
 
 There's a lane for most skill sets — pick by what you enjoy:
 
-| Lane | Examples |
-|---|---|
-| **Frontend** (React / TypeScript) | screens, components, the WebGL Helio, tests |
-| **Smart contracts** (Rust / Soroban) | the registry + vault, wiring live reads/writes |
+| Lane                                   | Examples                                                   |
+| -------------------------------------- | ---------------------------------------------------------- |
+| **Frontend** (React / TypeScript)      | screens, components, the WebGL Helio, tests                |
+| **Smart contracts** (Rust / Soroban)   | the registry + vault, wiring live reads/writes             |
 | **Localization** (no deep code needed) | translate the creator/admin/project surfaces, add a locale |
-| **Accessibility** | WCAG audit passes, keyboard / screen-reader fixes |
-| **Design** | extend the token system, motion, specimen cards |
-| **Docs** | improve guides, examples, this file |
+| **Accessibility**                      | WCAG audit passes, keyboard / screen-reader fixes          |
+| **Design**                             | extend the token system, motion, specimen cards            |
+| **Docs**                               | improve guides, examples, this file                        |
 
 ## Find something to work on
 
