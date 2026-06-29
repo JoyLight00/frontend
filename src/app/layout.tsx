@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from 'next'
-import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
 import { Providers } from './providers'
+import { LocaleProvider, type Messages } from '../i18n/LocaleProvider'
+import { type Locale } from '../i18n/request'
 import { TopBar } from '../shell/TopBar'
 import { Footer } from '../shell/Footer'
 import { THEME_SCRIPT } from '../theme/themeScript'
@@ -36,13 +37,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body>
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <LocaleProvider initialLocale={locale as Locale} initialMessages={messages as Messages}>
           <Providers>
             <TopBar />
             {children}
             <Footer />
           </Providers>
-        </NextIntlClientProvider>
+        </LocaleProvider>
       </body>
     </html>
   )
