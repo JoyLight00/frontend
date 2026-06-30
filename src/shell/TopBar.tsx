@@ -64,6 +64,9 @@ export function TopBar() {
     return () => observer.disconnect()
   }, [pathname])
 
+  const isDarkTheme = mounted && theme === 'dark'
+  const themeToggleLabel = isDarkTheme ? t('switchToLight') : t('switchToDark')
+
   return (
     <header
       style={{
@@ -153,15 +156,18 @@ export function TopBar() {
         </span>
 
         <button
+          type="button"
           onClick={toggle}
-          aria-label={mounted && theme === 'dark' ? t('switchToLight') : t('switchToDark')}
-          title={mounted && theme === 'dark' ? t('switchToLight') : t('switchToDark')}
+          aria-label={themeToggleLabel}
+          aria-pressed={mounted ? isDarkTheme : undefined}
+          title={themeToggleLabel}
           style={iconBtnStyle}
         >
-          {mounted ? theme === 'dark' ? <SunIcon /> : <MoonIcon /> : null}
+          {mounted ? isDarkTheme ? <SunIcon /> : <MoonIcon /> : null}
         </button>
 
         <button
+          type="button"
           onClick={switchLocale}
           aria-label={t('language')}
           style={{
