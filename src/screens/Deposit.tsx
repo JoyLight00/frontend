@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import { Button, AmountInput } from '../components'
 import { Helio } from '../brand/Helio'
@@ -35,11 +35,34 @@ export function Deposit({ onDone }: DepositProps) {
   const [txHash, setTxHash] = useState<string | null>(null)
   const [txError, setTxError] = useState<string | null>(null)
 
+  const mountedRef = useRef(true)
+  const abortControllerRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
+  }, [])
+
+  const changeStep = (newStep: DepositStep) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    if (mountedRef.current) {
+      setStep(newStep)
+    }
+  }
+
   const n = parseFloat(amount) || 0
   const price = livePrice
 
   return (
-    <main style={{ maxWidth: 520, margin: '0 auto', padding: '48px 24px 80px' }}>
+    <main id="main-content" style={{ maxWidth: 520, margin: '0 auto', padding: '48px 24px 80px' }}>
       <Stepper step={step} />
 
       {step === 'amount' && (
@@ -114,7 +137,7 @@ export function Deposit({ onDone }: DepositProps) {
             style={{ width: '100%', marginTop: 20 }}
             disabled={n < 1}
             reason={n < 1 ? t('reasonMin') : undefined}
-            onClick={() => setStep('review')}
+            onClick={() => changeStep('review')}
           >
             {n >= 1 ? t('investCta', { amount: n }) : t('investCtaEmpty')}
           </Button>
@@ -152,7 +175,7 @@ export function Deposit({ onDone }: DepositProps) {
             {t('reviewBody')}
           </p>
           <div style={{ display: 'flex', gap: 10 }}>
-            <Button variant="ghost" onClick={() => setStep('amount')}>
+            <Button variant="ghost" onClick={() => changeStep('amount')}>
               {t('back')}
             </Button>
             <Button
@@ -160,17 +183,30 @@ export function Deposit({ onDone }: DepositProps) {
               size="lg"
               style={{ flex: 1 }}
               onClick={async () => {
-                setStep('pending')
+                changeStep('pending')
                 setTxError(null)
+                const controller = new AbortController()
+                abortControllerRef.current = controller
                 try {
-                  const hash = await submitDeposit(n, address ?? '', sign)
-                  setTxHash(hash)
-                  setStep('success')
+                  const hash = await submitDeposit(n, address ?? '', sign, controller.signal)
+                  if (mountedRef.current) {
+                    setTxHash(hash)
+                    changeStep('success')
+                  }
                 } catch (e) {
-                  setTxError(
-                    e instanceof Error ? e.message : 'Transaction failed — please try again.',
-                  )
-                  setStep('amount')
+                  if (mountedRef.current) {
+                    if (e instanceof Error && e.message === 'Aborted') {
+                      return
+                    }
+                    setTxError(
+                      e instanceof Error ? e.message : 'Transaction failed — please try again.',
+                    )
+                    changeStep('amount')
+                  }
+                } finally {
+                  if (abortControllerRef.current === controller) {
+                    abortControllerRef.current = null
+                  }
                 }
               }}
             >
@@ -191,8 +227,26 @@ export function Deposit({ onDone }: DepositProps) {
               padding: '12px 0',
             }}
           >
+            {/* aria-live region announces pending state to screen readers (#80) */}
+            <div
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              style={{
+                position: 'absolute',
+                width: 1,
+                height: 1,
+                overflow: 'hidden',
+                clip: 'rect(0,0,0,0)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t('pendingH1')}. {t('pendingSub')}
+            </div>
             <PendingDot />
-            <h1 style={{ ...h1Style, textAlign: 'center', marginTop: 18 }}>{t('pendingH1')}</h1>
+            <h1 style={{ ...h1Style, textAlign: 'center', marginTop: 18 }} aria-hidden="true">
+              {t('pendingH1')}
+            </h1>
             <p
               style={{
                 fontFamily: 'var(--font-body)',
@@ -200,6 +254,7 @@ export function Deposit({ onDone }: DepositProps) {
                 color: 'var(--ink-60)',
                 margin: '0 0 14px',
               }}
+              aria-hidden="true"
             >
               {t('pendingSub')}
             </p>
@@ -214,6 +269,22 @@ export function Deposit({ onDone }: DepositProps) {
 
       {step === 'success' && (
         <Panel>
+          {/* Announce success to screen readers (#80) */}
+          <div
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            style={{
+              position: 'absolute',
+              width: 1,
+              height: 1,
+              overflow: 'hidden',
+              clip: 'rect(0,0,0,0)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {t('successH1')}
+          </div>
           <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0 6px' }}>
             <Helio size={160} motes={14} />
           </div>
@@ -350,7 +421,7 @@ function Row({ k, v }: { k: string; v: string }) {
 
 function PendingDot() {
   return (
-    <div style={{ position: 'relative', width: 56, height: 56 }}>
+    <div aria-hidden="true" style={{ position: 'relative', width: 56, height: 56 }}>
       <svg
         width="56"
         height="56"

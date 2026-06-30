@@ -5,8 +5,6 @@ import { Sparkline } from '../components/Sparkline'
 import { type Project } from '../data'
 import { type ProjectDetail as ProjectDetailData } from '../data/projectDetails'
 
-const strong = (chunks: ReactNode) => <b style={{ color: 'var(--ink)' }}>{chunks}</b>
-
 /**
  * ProjectDetail — the full story of one project the pool funds. Hero, the
  * creator's verification, two large sun-arc scores with their on-chain history,
@@ -23,7 +21,7 @@ export interface ProjectDetailProps {
 export function ProjectDetail({ project, detail, onInvest, onBack }: ProjectDetailProps) {
   const t = useTranslations('ProjectDetail')
   return (
-    <main style={{ maxWidth: 860, margin: '0 auto', padding: '40px 24px 96px' }}>
+    <main id="main-content" style={{ maxWidth: 860, margin: '0 auto', padding: '40px 24px 96px' }}>
       {onBack && (
         <button
           type="button"
@@ -340,7 +338,6 @@ function ScoreColumn({
   onChainNote: string
   verifiedAgo: string
 }) {
-  const t = useTranslations('ProjectDetail')
   return (
     <div
       style={{

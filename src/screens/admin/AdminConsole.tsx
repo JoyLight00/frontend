@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useTranslations } from 'next-intl'
 import { Badge, Button, AddressChip, Toast } from '@/components'
 import { type ToastTone } from '@/components'
 import { VAULT_STATS, REGISTRY, WHITELIST, type RegistryEntry, type Creator } from '@/data/admin'
@@ -21,6 +22,7 @@ interface ToastState {
 }
 
 export function AdminConsole() {
+  const t = useTranslations('Admin')
   const [registry, setRegistry] = useState<RegistryEntry[]>(REGISTRY)
   const [whitelist, setWhitelist] = useState<Creator[]>(WHITELIST)
   // Vault liquid + deployed shift as the oracle funds projects.
@@ -28,9 +30,7 @@ export function AdminConsole() {
   const [deployed, setDeployed] = useState(VAULT_STATS.deployed)
   const [toast, setToast] = useState<ToastState | null>(null)
 
-  // The vault funds more projects than the 6 demo registry rows; show the pool's
-  // own count so it agrees with the deployed-capital figure beside it.
-  const fundedCount = VAULT_STATS.projectsFunded
+  const fundedCount = registry.filter((r) => parseFundedNum(r.funded) > 0).length
 
   const updateScores = (id: number, credit: number, green: number) => {
     setRegistry((rows) =>
@@ -39,8 +39,8 @@ export function AdminConsole() {
     const name = registry.find((r) => r.id === id)?.name ?? 'project'
     setToast({
       tone: 'success',
-      title: 'Scores written on-chain',
-      message: `${name} re-verified: credit ${credit}, green ${green}.`,
+      title: t('toastScoresTitle'),
+      message: t('toastScoresMsg', { name, credit, green }),
     })
   }
 
@@ -56,8 +56,8 @@ export function AdminConsole() {
     const name = registry.find((r) => r.id === id)?.name ?? 'project'
     setToast({
       tone: 'solar',
-      title: 'Capital deployed',
-      message: `Funded ${name} with $${safe.toLocaleString('en-US')} from the vault.`,
+      title: t('toastFundTitle'),
+      message: t('toastFundMsg', { name, amount: safe.toLocaleString('en-US') }),
     })
   }
 
@@ -66,11 +66,11 @@ export function AdminConsole() {
     const c = whitelist.find((x) => x.address === address)
     setToast({
       tone: status === 'approved' ? 'success' : 'neutral',
-      title: status === 'approved' ? 'Creator approved' : 'Creator revoked',
+      title: status === 'approved' ? t('toastApprovedTitle') : t('toastRevokedTitle'),
       message:
         status === 'approved'
-          ? `${c?.name ?? 'Creator'} can now register projects.`
-          : `${c?.name ?? 'Creator'} can no longer register new projects.`,
+          ? t('toastApprovedMsg', { name: c?.name ?? 'Creator' })
+          : t('toastRevokedMsg', { name: c?.name ?? 'Creator' }),
     })
   }
 
@@ -91,7 +91,7 @@ export function AdminConsole() {
       >
         <div>
           <div className="hb-eyebrow" style={{ marginBottom: 8 }}>
-            Heliobond internal
+            {t('eyebrow')}
           </div>
           <h1
             style={{
@@ -102,38 +102,36 @@ export function AdminConsole() {
               color: 'var(--ink)',
             }}
           >
-            Admin · oracle console
+            {t('h1')}
           </h1>
-          <p style={{ ...subtext, marginTop: 6 }}>
-            Verify scores, deploy vault capital, and manage the creator whitelist. Every write is
-            on-chain.
-          </p>
+          <p style={{ ...subtext, marginTop: 6 }}>{t('subtitle')}</p>
         </div>
-        <Badge tone="testnet">Internal · testnet</Badge>
+        <Badge tone="testnet">{t('badgeInternal')}</Badge>
       </header>
 
       {/* Vault overview — dense horizontal row of stat cells */}
       <section style={{ ...sectionCard, padding: 0, marginBottom: 20 }}>
         <div style={statRow}>
-          <StatCell label="Total assets" value={`$${formatMoney(totalAssets)}`} />
-          <StatCell label="Share price" value={VAULT_STATS.sharePrice.toFixed(4)} unit="USDC/HBS" />
-          <StatCell label="HBS supply" value={formatMoney(VAULT_STATS.hbsSupply)} />
-          <StatCell label="Liquid USDC" value={`$${formatMoney(liquid)}`} />
-          <StatCell label="Capital deployed" value={`$${formatMoney(deployed)}`} />
-          <StatCell label="Projects funded" value={String(fundedCount)} last />
+          <StatCell label={t('statTotalAssets')} value={`$${formatMoney(totalAssets)}`} />
+          <StatCell
+            label={t('statSharePrice')}
+            value={VAULT_STATS.sharePrice.toFixed(4)}
+            unit="USDC/HBS"
+          />
+          <StatCell label={t('statHbsSupply')} value={formatMoney(VAULT_STATS.hbsSupply)} />
+          <StatCell label={t('statLiquid')} value={`$${formatMoney(liquid)}`} />
+          <StatCell label={t('statDeployed')} value={`$${formatMoney(deployed)}`} />
+          <StatCell label={t('statProjectsFunded')} value={String(fundedCount)} last />
         </div>
       </section>
 
       {/* Project registry table */}
-      <Section
-        title="Project registry"
-        caption="Oracle-verified credit & green scores. Click a header to reorder; update inline."
-      >
+      <Section title={t('sectionRegistry')} caption={t('sectionRegistryCaption')}>
         <RegistryTable rows={registry} onSave={updateScores} />
       </Section>
 
       {/* Oracle actions */}
-      <Section title="Oracle actions" caption="Privileged writes to the registry and the vault.">
+      <Section title={t('sectionOracle')} caption={t('sectionOracleCaption')}>
         <OracleForms
           projects={registry}
           liquid={liquid}
@@ -143,10 +141,7 @@ export function AdminConsole() {
       </Section>
 
       {/* Whitelist management */}
-      <Section
-        title="Creator whitelist"
-        caption="Only approved creators can register projects in the ProjectRegistry."
-      >
+      <Section title={t('sectionWhitelist')} caption={t('sectionWhitelistCaption')}>
         <div>
           {whitelist.map((c, i) => (
             <div
@@ -166,12 +161,12 @@ export function AdminConsole() {
                   <span style={{ fontFamily: 'var(--font-data)', fontFeatureSettings: '"tnum" 1' }}>
                     {c.projects}
                   </span>{' '}
-                  live {c.projects === 1 ? 'project' : 'projects'}
+                  {t('liveProject', { count: c.projects })}
                 </div>
               </div>
               <AddressChip value={c.address} label="creator address" />
               <Badge tone={c.status === 'approved' ? 'growth' : 'neutral'}>
-                {c.status === 'approved' ? 'Approved' : 'Pending'}
+                {c.status === 'approved' ? t('statusApproved') : t('statusPending')}
               </Badge>
               <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
                 {c.status === 'approved' ? (
@@ -180,7 +175,7 @@ export function AdminConsole() {
                     variant="ghost"
                     onClick={() => setCreatorStatus(c.address, 'pending')}
                   >
-                    Revoke
+                    {t('actionRevoke')}
                   </Button>
                 ) : (
                   <Button
@@ -188,7 +183,7 @@ export function AdminConsole() {
                     variant="ghost"
                     onClick={() => setCreatorStatus(c.address, 'approved')}
                   >
-                    Approve
+                    {t('actionApprove')}
                   </Button>
                 )}
               </div>
@@ -293,12 +288,12 @@ function formatMoney(n: number): string {
   return n.toLocaleString('en-US', { maximumFractionDigits: 0 })
 }
 
-function parseFundedNum(s: string): number {
+export function parseFundedNum(s: string): number {
   const n = Number(s.replace(/[^0-9.]/g, ''))
   return Number.isFinite(n) ? n : 0
 }
 
-function formatFunded(n: number): string {
+export function formatFunded(n: number): string {
   return `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
 }
 

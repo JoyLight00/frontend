@@ -180,11 +180,27 @@ export function ProjectBuilder() {
   )
 }
 
-/** A dashed, non-functional upload affordance — a labelled invitation, not a control. */
-function DropZone({ label, hint }: { label: string; hint: string }) {
+function DropZone({
+  label,
+  hint,
+  accept,
+  multiple = false,
+}: {
+  label: string
+  hint: string
+  accept?: string
+  multiple?: boolean
+}) {
+  const inputId = useId()
+  const hintId = `${inputId}-hint`
+  const [isFocused, setIsFocused] = useState(false)
+  const [selectedFiles, setSelectedFiles] = useState('')
+
   return (
-    <div
+    <label
+      htmlFor={inputId}
       style={{
+        position: 'relative',
         border: '1px dashed var(--ink-12)',
         borderRadius: 'var(--radius-card)',
         background: 'var(--ink-06)',
@@ -194,8 +210,38 @@ function DropZone({ label, hint }: { label: string; hint: string }) {
         flexDirection: 'column',
         alignItems: 'center',
         gap: 6,
+        cursor: 'pointer',
+        outline: isFocused ? '2px solid var(--solar)' : 'none',
+        outlineOffset: 3,
       }}
     >
+      <input
+        id={inputId}
+        type="file"
+        accept={accept}
+        multiple={multiple}
+        aria-describedby={hintId}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        onChange={(event) => {
+          const files = Array.from(event.target.files ?? [])
+          setSelectedFiles(
+            files.length === 0
+              ? ''
+              : files.length === 1
+                ? files[0].name
+                : `${files.length} files selected`,
+          )
+        }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          opacity: 0,
+          cursor: 'pointer',
+        }}
+      />
       <svg
         viewBox="0 0 24 24"
         width="22"
@@ -222,6 +268,7 @@ function DropZone({ label, hint }: { label: string; hint: string }) {
         {label}
       </div>
       <div
+        id={hintId}
         style={{
           fontFamily: 'var(--font-body)',
           fontSize: 11.5,
@@ -229,9 +276,9 @@ function DropZone({ label, hint }: { label: string; hint: string }) {
           lineHeight: 1.4,
         }}
       >
-        {hint}
+        {selectedFiles || hint}
       </div>
-    </div>
+    </label>
   )
 }
 
@@ -267,22 +314,6 @@ function Label({ htmlFor, children }: { htmlFor?: string; children: ReactNode })
     >
       {children}
     </label>
-  )
-}
-
-function Card({ children }: { children: ReactNode }) {
-  return (
-    <div
-      style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--ink-12)',
-        borderRadius: 'var(--radius-card)',
-        padding: 24,
-        boxShadow: 'var(--shadow-sm)',
-      }}
-    >
-      {children}
-    </div>
   )
 }
 

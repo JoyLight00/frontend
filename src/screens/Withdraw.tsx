@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import { Button, AmountInput, LiquidityMeter } from '../components'
 import { submitWithdraw } from '../wallet/vault'
@@ -23,13 +23,36 @@ export function Withdraw({ onDone, onBack }: WithdrawProps) {
   const { address, sign } = useWallet()
   const liquid = 236 // your liquid share, $
   const [step, setStep] = useState<WithdrawStep>('amount')
-  const [amount, setAmount] = useState('300')
+  const [amount, setAmount] = useState('')
   const [txHash, setTxHash] = useState<string | null>(null)
   const [txError, setTxError] = useState<string | null>(null)
+
+  const mountedRef = useRef(true)
+  const abortControllerRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
+  }, [])
+
+  const changeStep = (newStep: WithdrawStep) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    if (mountedRef.current) {
+      setStep(newStep)
+    }
+  }
   const n = parseFloat(amount) || 0
 
   return (
-    <main style={{ maxWidth: 520, margin: '0 auto', padding: '48px 24px 80px' }}>
+    <main id="main-content" style={{ maxWidth: 520, margin: '0 auto', padding: '48px 24px 80px' }}>
       {step === 'amount' && (
         <div style={panel}>
           <h1 style={hw}>{t('h1')}</h1>
@@ -70,17 +93,30 @@ export function Withdraw({ onDone, onBack }: WithdrawProps) {
             disabled={n < 1 || n > liquid}
             reason={n > liquid ? t('reasonExceeds') : n < 1 ? t('reasonMin') : undefined}
             onClick={async () => {
-              setStep('pending')
+              changeStep('pending')
               setTxError(null)
+              const controller = new AbortController()
+              abortControllerRef.current = controller
               try {
-                const hash = await submitWithdraw(n, address ?? '', sign)
-                setTxHash(hash)
-                setStep('success')
+                const hash = await submitWithdraw(n, address ?? '', sign, controller.signal)
+                if (mountedRef.current) {
+                  setTxHash(hash)
+                  changeStep('success')
+                }
               } catch (e) {
-                setTxError(
-                  e instanceof Error ? e.message : 'Transaction failed — please try again.',
-                )
-                setStep('amount')
+                if (mountedRef.current) {
+                  if (e instanceof Error && e.message === 'Aborted') {
+                    return
+                  }
+                  setTxError(
+                    e instanceof Error ? e.message : 'Transaction failed — please try again.',
+                  )
+                  changeStep('amount')
+                }
+              } finally {
+                if (abortControllerRef.current === controller) {
+                  abortControllerRef.current = null
+                }
               }
             }}
           >
@@ -108,8 +144,26 @@ export function Withdraw({ onDone, onBack }: WithdrawProps) {
 
       {step === 'pending' && (
         <div style={panel}>
+          {/* Announce pending state to screen readers (#80) */}
+          <div
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            style={{
+              position: 'absolute',
+              width: 1,
+              height: 1,
+              overflow: 'hidden',
+              clip: 'rect(0,0,0,0)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {t('pendingH1')}. {t('pendingSub')}
+          </div>
           <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <h1 style={hw}>{t('pendingH1')}</h1>
+            <h1 style={hw} aria-hidden="true">
+              {t('pendingH1')}
+            </h1>
             <p
               style={{
                 fontFamily: 'var(--font-body)',
@@ -117,6 +171,7 @@ export function Withdraw({ onDone, onBack }: WithdrawProps) {
                 color: 'var(--ink-60)',
                 margin: 0,
               }}
+              aria-hidden="true"
             >
               {t('pendingSub')}
             </p>
@@ -126,6 +181,22 @@ export function Withdraw({ onDone, onBack }: WithdrawProps) {
 
       {step === 'success' && (
         <div style={panel}>
+          {/* Announce success to screen readers (#80) */}
+          <div
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            style={{
+              position: 'absolute',
+              width: 1,
+              height: 1,
+              overflow: 'hidden',
+              clip: 'rect(0,0,0,0)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {t('successH1')}
+          </div>
           <h1 style={{ ...hw, textAlign: 'center' }}>{t('successH1')}</h1>
           <p
             style={{

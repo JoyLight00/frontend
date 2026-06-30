@@ -91,7 +91,7 @@ export function CreatorDashboard({ data = CREATOR_DASHBOARD }: CreatorDashboardP
           </div>
         </Card>
 
-        <Card>
+        <Card style={{ padding: 22, height: '100%', boxSizing: 'border-box' }}>
           <div
             style={{
               display: 'flex',
@@ -177,7 +177,7 @@ export function CreatorDashboard({ data = CREATOR_DASHBOARD }: CreatorDashboardP
           </ul>
         </Card>
 
-        <Card>
+        <Card style={{ padding: 22, height: '100%', boxSizing: 'border-box' }}>
           <div
             style={{
               display: 'flex',
@@ -257,66 +257,6 @@ function UpdateRow({ update, first }: UpdateRowProps) {
       >
         {update.tx} ↗
       </a>
-    </div>
-  )
-}
-
-/** A minimal, self-built inline SVG sparkline — no external component. */
-function Sparkline({ series, label }: { series: readonly number[]; label: string }) {
-  const w = 96
-  const h = 26
-  const pad = 2
-  if (series.length < 2) return null
-  const min = Math.min(...series)
-  const max = Math.max(...series)
-  const span = max - min || 1
-  const step = (w - pad * 2) / (series.length - 1)
-  const points = series.map((v, i) => {
-    const x = pad + i * step
-    const y = pad + (h - pad * 2) * (1 - (v - min) / span)
-    return [x, y] as const
-  })
-  const d = points
-    .map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`)
-    .join(' ')
-  const last = points[points.length - 1]
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} role="img" aria-label={label}>
-      <path
-        d={d}
-        fill="none"
-        stroke="var(--ink)"
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        opacity={0.55}
-      />
-      <circle
-        cx={last[0]}
-        cy={last[1]}
-        r={2.6}
-        fill="var(--solar)"
-        stroke="var(--ink)"
-        strokeWidth={1}
-      />
-    </svg>
-  )
-}
-
-function Card({ children }: { children: ReactNode }) {
-  return (
-    <div
-      style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--ink-12)',
-        borderRadius: 'var(--radius-card)',
-        padding: 22,
-        boxShadow: 'var(--shadow-sm)',
-        height: '100%',
-        boxSizing: 'border-box',
-      }}
-    >
-      {children}
     </div>
   )
 }

@@ -13,8 +13,6 @@
 
 import { HB_DATA } from '../data'
 
-
-
 export interface WithdrawPreview {
   assets: number
   sharePrice: number
@@ -143,10 +141,26 @@ export async function submitDeposit(
   amount: number,
   address: string,
   sign: (xdr: string) => Promise<string>,
+  signal?: AbortSignal,
 ): Promise<string> {
   if (!CONTRACT_ID) {
-    await new Promise((r) => setTimeout(r, 2000))
-    return `demo${Math.random().toString(36).slice(2, 8).padEnd(6, '0')}…${Math.random().toString(36).slice(2, 8)}`
+    return new Promise<string>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        resolve(
+          `demo${Math.random().toString(36).slice(2, 8).padEnd(6, '0')}…${Math.random().toString(36).slice(2, 8)}`,
+        )
+      }, 2000)
+      if (signal) {
+        signal.addEventListener('abort', () => {
+          clearTimeout(timer)
+          reject(new Error('Aborted'))
+        })
+        if (signal.aborted) {
+          clearTimeout(timer)
+          reject(new Error('Aborted'))
+        }
+      }
+    })
   }
 
   const { rpc, Contract, TransactionBuilder, Networks, Horizon, nativeToScVal, Transaction } =
@@ -195,10 +209,26 @@ export async function submitWithdraw(
   amount: number,
   address: string,
   sign: (xdr: string) => Promise<string>,
+  signal?: AbortSignal,
 ): Promise<string> {
   if (!CONTRACT_ID) {
-    await new Promise((r) => setTimeout(r, 2000))
-    return `demo${Math.random().toString(36).slice(2, 8).padEnd(6, '0')}…${Math.random().toString(36).slice(2, 8)}`
+    return new Promise<string>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        resolve(
+          `demo${Math.random().toString(36).slice(2, 8).padEnd(6, '0')}…${Math.random().toString(36).slice(2, 8)}`,
+        )
+      }, 2000)
+      if (signal) {
+        signal.addEventListener('abort', () => {
+          clearTimeout(timer)
+          reject(new Error('Aborted'))
+        })
+        if (signal.aborted) {
+          clearTimeout(timer)
+          reject(new Error('Aborted'))
+        }
+      }
+    })
   }
 
   const { rpc, Contract, TransactionBuilder, Networks, Horizon, nativeToScVal, Transaction } =
